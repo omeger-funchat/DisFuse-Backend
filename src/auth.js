@@ -3,6 +3,29 @@ import { getUser, upsertUser } from "./db.js";
 const cache = new Map();
 const TTL = 10 * 60 * 1000;
 
+export async function verifyToken(header) {
+  if (!header) {
+    const e = new Error("missing token");
+    e.status = 401;
+    throw e;
+  }
+  const me = await discordMe(header);
+  const avatar = me.avatar
+    ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png`
+    : null;
+  const user = upsertUser({
+    id: me.id,
+    username: me.global_name || me.username,
+    avatar,
+  });
+  if (user.banned) {
+    const e = new Error("banned");
+    e.status = 403;
+    throw e;
+  }
+  return user;
+}
+
 async function discordMe(token) {
   const hit = cache.get(token);
   if (hit && Date.now() - hit.at < TTL) return hit.user;
