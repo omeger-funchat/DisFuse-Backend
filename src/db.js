@@ -169,11 +169,14 @@ export function listUsers() {
 }
 
 export function shapeProject(r) {
+  const ownerRow = db.prepare("SELECT * FROM users WHERE id = ?").get(r.ownerId);
   return {
     _id: r.id,
     id: r.id,
     ownerId: r.ownerId,
-    owner: r.ownerId,
+    owner: ownerRow
+      ? { id: ownerRow.id, username: ownerRow.username, avatar: ownerRow.avatar }
+      : { id: r.ownerId },
     name: r.name,
     description: r.description,
     public: !!r.public,
