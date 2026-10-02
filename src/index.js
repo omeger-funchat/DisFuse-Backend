@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 import { auth as restAuth } from "./auth.js";
+import { db } from "./db.js;
 import usersRouter from "./routes/users.js";
 import projectsRouter from "./routes/projects.js";
 import commentsRouter from "./routes/comments.js";
@@ -22,6 +23,12 @@ app.use(express.json({ limit: "25mb" }));
 
 app.get("/", (req, res) => res.send("DisFuse API"));
 app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/stats", (req, res) => {
+  const users = db.prepare("SELECT COUNT(*) c FROM users").get().c;
+  const projects = db.prepare("SELECT COUNT(*) c FROM projects").get().c;
+  const templates = db.prepare("SELECT COUNT(*) c FROM templates").get().c;
+  res.json({ users, projects, templates, data: { users, projects, templates } });
+});
 
 app.use("/users", restAuth, usersRouter);
 app.use("/projects", restAuth, projectsRouter);
