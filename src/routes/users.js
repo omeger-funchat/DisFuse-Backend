@@ -35,6 +35,11 @@ r.get("/staff", auth, (req, res) => {
 });
 
 r.get("/", auth, (req, res) => {
+  if (req.query.ids) {
+    const ids = String(req.query.ids).split(",").map((s) => s.trim()).filter(Boolean).slice(0, 100);
+    const users = ids.map((id) => getUser(id)).filter(Boolean).map((u) => ({ id: u.id, username: u.username, avatar: u.avatar }));
+    return res.json({ users, data: users });
+  }
   const q = (req.query.q || "").toLowerCase();
   let users = db
     .prepare("SELECT * FROM users ORDER BY createdAt DESC LIMIT 50")
@@ -120,6 +125,21 @@ r.put("/:id", auth, selfOnly, (req, res) => {
       blocked: body.blocked ?? u.blocked,
     }),
   });
+});
+
+function toggleFav(me, favId) {
+  const u = getUser(me);
+  const favs = new Set(u.favorites);
+  if (favs.has(favId)) favs.delete(favId);
+  else favs.add(favId);
+  return updateUser(me, { favorites: [...favs] });
+}
+
+r.patch("/:id/favorites", auth, (req, res) => {
+  const favId = req.body?.favId || req.body?.projectId || req.body?.id;
+  if (!favId) return res.status(400).json({ error: "favId required" });
+  const out = toggleFav(req.discordUser.id, favId);
+  res.json({ ...out, favorites: out.favorites, data: out });
 });
 
 r.post("/:id/favorites", auth, (req, res) => {
