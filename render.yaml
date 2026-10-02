@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: disfuse-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_ORIGIN
+        value: https://omeger-funchat.github.io
+      - key: ADMIN_IDS
+        value: ""
