@@ -98,6 +98,13 @@ function toggle(id, me, table) {
   return [...likes];
 }
 
+r.patch("/:id/likes", auth, (req, res) => {
+  const likes = toggle(req.params.id, req.discordUser.id, "projects");
+  if (!likes) return res.status(404).json({ error: "not found" });
+  const out = getProject(req.params.id);
+  res.json({ ...out, likes, data: out });
+});
+
 r.post("/:id/likes", auth, (req, res) => {
   const likes = toggle(req.params.id, req.discordUser.id, "projects");
   if (!likes) return res.status(404).json({ error: "not found" });
