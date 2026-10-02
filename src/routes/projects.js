@@ -40,25 +40,31 @@ r.get("/:id", auth, (req, res) => {
   res.json({ ...p, data: p });
 });
 
-r.put("/:id", auth, (req, res) => {
-  const p = getProject(req.params.id);
-  if (!p || p.ownerId !== req.discordUser.id) return res.status(404).json({ error: "not found" });
-  const b = req.body || {};
+function updateProject(p, b) {
   db.prepare("UPDATE projects SET name = ?, description = ?, public = ?, updatedAt = ? WHERE id = ?").run(
     b.name ?? p.name,
     b.description ?? p.description,
-    b.public ?? b.visibility ?? p.public ? 1 : 0,
+    (b.public ?? b.visibility ?? p.public) ? 1 : 0,
     now(),
     p._id,
   );
   touchProject(p._id);
   const out = getProject(p._id);
+  return out;
+}
+
+r.put("/:id", auth, (req, res) => {
+  const p = getProject(req.params.id);
+  if (!p || p.ownerId !== req.discordUser.id) return res.status(404).json({ error: "not found" });
+  const out = updateProject(p, req.body || {});
   res.json({ data: out, project: out });
 });
 
 r.patch("/:id", auth, (req, res) => {
-  req.url = req.url;
-  r.handle({ ...req, method: "PUT" }, res);
+  const p = getProject(req.params.id);
+  if (!p || p.ownerId !== req.discordUser.id) return res.status(404).json({ error: "not found" });
+  const out = updateProject(p, req.body || {});
+  res.json({ data: out, project: out });
 });
 
 r.delete("/:id", auth, (req, res) => {
