@@ -20,11 +20,4 @@ r.get("/control/unsupported", auth, (req, res) => {
   res.json({ ...body, data: body });
 });
 
-r.get("/stats", (req, res) => {
-  const users = db.prepare("SELECT COUNT(*) c FROM users").get().c;
-  const projects = db.prepare("SELECT COUNT(*) c FROM projects").get().c;
-  const templates = db.prepare("SELECT COUNT(*) c FROM templates").get().c;
-  res.json({ users, projects, templates, data: { users, projects, templates } });
-});
-
 export default r;
