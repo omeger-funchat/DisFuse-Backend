@@ -4,7 +4,7 @@ import cors from "cors";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 
-import { auth as restAuth } from "./auth.js";
+import { auth as restAuth, verifyToken } from "./auth.js";
 import { db } from "./db.js;
 import usersRouter from "./routes/users.js";
 import projectsRouter from "./routes/projects.js";
@@ -46,10 +46,40 @@ const io = new Server(server, {
   cors: { origin: ORIGIN.split(",").map((s) => s.trim()) },
 });
 
+io.of("/control").use(async (socket, next) => {
+  try {
+    socket.user = await verifyToken(socket.handshake.auth?.token);
+    next();
+  } catch {
+    next(new Error("unauthorized"));
+  }
+});
+
 io.of("/control").on("connection", (socket) => {
-  socket.emit("unsupported", {
-    message: "Live control needs a bot runner, which this server does not have yet.",
+  socket.on("control:join", ({ projectId } = {}, ack) => {
+    const answer = (payload) => {
+      if (typeof ack === "function") ack(payload);
+      else socket.emit("control:status", payload);
+    };
+    const row = db.prepare("SELECT ownerId FROM projects WHERE id = ?").get(projectId);
+    if (!row) {
+      return answer({ ok: false, error: "Couldn't open Control for this bot." });
+    }
+    if (row.ownerId !== socket.user.id) {
+      return answer({ ok: false, error: "Only the bot owner can control it." });
+    }
+    answer({
+      ok: false,
+      error: "Live bot control needs a bot runner, which this server does not have yet.",
+      reason: "no-runner",
+    });
   });
+
+  socket.on("controlAction", (params, ack) => {
+    const answer = { ok: false, error: "Live bot control needs a bot runner.", unsupported: true };
+    if (typeof ack === "function") ack(answer);
+  });
+
   socket.on("disconnect", () => {});
 });
 
