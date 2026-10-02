@@ -14,7 +14,7 @@ import websitesRouter from "./routes/websites.js";
 import miscRouter from "./routes/misc.js";
 
 const ORIGIN = process.env.CORS_ORIGIN || "https://omeger-funchat.github.io";
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 7860);
 
 const app = express();
 app.use(cors({ origin: ORIGIN.split(",").map((s) => s.trim()) }));
